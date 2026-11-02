@@ -1,20 +1,771 @@
+# openapi.yaml — Контракт API (docs/openapi.yaml)
 openapi: 3.1.0
 info:
-  title: API
-  # semver контракта: растёт при любой правке. Версия в пути (v1) меняется только при ломающих изменениях
+  title: esim-compass API
   version: 1.0.0
+  description: >
+    REST API справочника тарифов eSIM по странам и калькулятора трафика. Все
+    эндпоинты данных живут под `/api/v1`. Маршруты `/robots.txt` и
+    `/sitemap.xml` отдаются бэкендом в корне домена вне префикса `/api/v1`.
 servers:
   - url: /api/v1
+    description: API v1
+
+tags:
+  - name: pages
+    description: SEO-тексты служебных страниц
+  - name: countries
+    description: Страны и тарифы по странам
+  - name: providers
+    description: Провайдеры eSIM и нормы сценариев калькулятора
+  - name: calculator
+    description: Расчёт потребления трафика и подбор проверенных тарифов
+  - name: redirects
+    description: Переходы по партнёрским и исходным ссылкам тарифов
+
 paths:
-  /health:
+  /countries:
     get:
-      summary: Проверка живости
+      tags:
+        - countries
+      summary: Получить список всех стран со сводкой цен в EUR и PLN
+      operationId: listCountries
+      parameters:
+        - $ref: "#/components/parameters/LangParam"
       responses:
         "200":
-          description: OK
+          description: Список стран со сводкой по тарифам
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status: { type: string, example: ok }
+                $ref: "#/components/schemas/CountryListResponse"
+
+  /countries/{slug}:
+    get:
+      tags:
+        - countries
+      summary:
+        Получить данные страницы страны, включая SEO, ограничения и тарифы
+      operationId: getCountryBySlug
+      parameters:
+        - $ref: "#/components/parameters/CountrySlugParam"
+        - $ref: "#/components/parameters/LangParam"
+      responses:
+        "200":
+          description: Полные данные страны и список её тарифов
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CountryDetailResponse"
+        "404":
+          description: Страна не найдена
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /countries/{slug}/tariffs:
+    get:
+      tags:
+        - countries
+      summary: Получить список тарифов для конкретной страны с фильтрацией
+      operationId: listCountryTariffs
+      parameters:
+        - $ref: "#/components/parameters/CountrySlugParam"
+        - $ref: "#/components/parameters/LangParam"
+        - name: data_gb
+          in: query
+          required: false
+          description: Фильтр по фиксированному объёму пакета в ГБ (5 или 10)
+          schema:
+            type: number
+        - name: currency
+          in: query
+          required: false
+          description: Фильтр по валюте цены (EUR или PLN)
+          schema:
+            $ref: "#/components/schemas/CurrencyCode"
+        - name: is_unlimited
+          in: query
+          required: false
+          description: Фильтр безлимитных тарифов
+          schema:
+            type: boolean
+        - name: only_verified
+          in: query
+          required: false
+          description:
+            Если true, возвращаются только проверенные тарифы (is_verified =
+            true)
+          schema:
+            type: boolean
+            default: false
+      responses:
+        "200":
+          description: Список тарифов страны
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CountryTariffsResponse"
+        "404":
+          description: Страна не найдена
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /pages/{slug}:
+    get:
+      tags:
+        - pages
+      summary: SEO-тексты служебной страницы (сейчас только home)
+      operationId: getPageContent
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - home
+        - $ref: '#/components/parameters/LangParam'
+      responses:
+        '200':
+          description: Заголовок, описание и вводный текст страницы
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageContentResponse'
+        '404':
+          description: Страница не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /providers:
+    get:
+      tags:
+        - providers
+      summary: Получить список провайдеров eSIM и справочник норм калькулятора
+      operationId: listProviders
+      parameters:
+        - $ref: "#/components/parameters/LangParam"
+      responses:
+        "200":
+          description: Список провайдеров и сценариев калькулятора
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProviderListResponse"
+
+  /calculator/estimate:
+    post:
+      tags:
+        - calculator
+      summary:
+        Рассчитать объём трафика на поездку и подобрать проверенные тарифы
+        страны
+      operationId: estimateTraffic
+      parameters:
+        - $ref: "#/components/parameters/LangParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CalculatorEstimateRequest"
+      responses:
+        "200":
+          description:
+            Результат расчёта трафика и подходящие проверенные тарифы
+            (is_verified = true)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalculatorEstimateResponse"
+        "404":
+          description: Указанная страна не найдена
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Ошибка валидации входных параметров расчёта
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /redirects/{tariff_id}:
+    get:
+      tags:
+        - redirects
+      summary:
+        Переход на страницу тарифа (партнёрский URL или прямой source_url)
+      operationId: redirectToTariff
+      parameters:
+        - name: tariff_id
+          in: path
+          required: true
+          description: Идентификатор тарифа в базе данных
+          schema:
+            type: integer
+            minimum: 1
+        - $ref: "#/components/parameters/LangParam"
+      responses:
+        "302":
+          description:
+            Редирект на партнёрский URL (если задан и активен) либо на
+            source_url тарифа
+          headers:
+            Location:
+              description: Целевой URL провайдера
+              schema:
+                type: string
+                format: uri
+        "404":
+          description: Тариф не найден
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  parameters:
+    LangParam:
+      name: lang
+      in: query
+      required: false
+      description: Язык ответа (ru или en)
+      schema:
+        $ref: "#/components/schemas/LanguageCode"
+    CountrySlugParam:
+      name: slug
+      in: path
+      required: true
+      description: URL-идентификатор страны (например, turkey, japan, thailand)
+      schema:
+        type: string
+        pattern: "^[a-z0-9-]+$"
+
+  schemas:
+    LanguageCode:
+      type: string
+      enum:
+        - ru
+        - en
+      default: ru
+
+    CurrencyCode:
+      type: string
+      enum:
+        - EUR
+        - PLN
+
+    CurrencyPriceSummary:
+      type: object
+      required:
+        - currency
+        - min_price
+        - max_price
+        - verified_tariff_count
+      properties:
+        currency:
+          $ref: "#/components/schemas/CurrencyCode"
+        min_price:
+          type: number
+          examples: [8.06]
+        max_price:
+          type: number
+          examples: [14.00]
+        verified_tariff_count:
+          type: integer
+          examples: [6]
+
+    CountrySummary:
+      type: object
+      required:
+        - id
+        - slug
+        - iso_code
+        - name
+        - verified_tariffs_count
+        - unverified_tariffs_count
+        - last_checked_at
+        - price_summaries
+      properties:
+        id:
+          type: integer
+        slug:
+          type: string
+          examples: [turkey]
+        iso_code:
+          type: string
+          minLength: 2
+          maxLength: 2
+          examples: [TR]
+        name:
+          type: string
+          examples: [Турция]
+        restriction_notice:
+          type:
+            - string
+            - "null"
+        verified_tariffs_count:
+          type: integer
+          examples: [9]
+        unverified_tariffs_count:
+          type: integer
+          examples: [0]
+        last_checked_at:
+          type:
+            - string
+            - "null"
+          format: date
+          examples: ["2026-11-02"]
+        price_summaries:
+          type: array
+          items:
+            $ref: "#/components/schemas/CurrencyPriceSummary"
+
+    CountryListResponse:
+      type: object
+      required:
+        - lang
+        - items
+      properties:
+        lang:
+          $ref: "#/components/schemas/LanguageCode"
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/CountrySummary"
+
+    SeoMetadata:
+      type: object
+      required:
+        - title
+        - description
+        - intro_text
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        intro_text:
+          type: string
+
+    TariffItem:
+      type: object
+      required:
+        - id
+        - country_slug
+        - provider_slug
+        - provider_name
+        - is_unlimited
+        - duration_days
+        - price
+        - is_on_sale
+        - currency
+        - source_url
+        - redirect_path
+        - is_affiliate_link
+        - checked_at
+        - is_verified
+      properties:
+        id:
+          type: integer
+        country_slug:
+          type: string
+        provider_slug:
+          type: string
+          examples: [nomad]
+        provider_name:
+          type: string
+          examples: [Nomad]
+        data_gb:
+          type:
+            - number
+            - "null"
+          description:
+            Объём пакета в ГБ (5 или 10). Для безлимитных тарифов равен null.
+          examples: [5, 10]
+        is_unlimited:
+          type: boolean
+          examples: [false]
+        duration_days:
+          type: integer
+          examples: [30]
+        price:
+          type: number
+          examples: [8.06]
+        original_price:
+          type:
+            - number
+            - "null"
+          description:
+            Зачёркнутая или исходная цена до скидки на странице провайдера.
+          examples: [13.43]
+        is_on_sale:
+          type: boolean
+          examples: [false]
+        currency:
+          $ref: "#/components/schemas/CurrencyCode"
+        source_url:
+          type: string
+          format: uri
+          description:
+            Прямая ссылка на страницу провайдера, с которой снята цена.
+        redirect_path:
+          type: string
+          description:
+            Относительный путь перехода (/api/v1/redirects/{tariff_id}).
+          examples: [/api/v1/redirects/1]
+        is_affiliate_link:
+          type: boolean
+          description:
+            Признак наличия активной партнёрской ссылки для маркировки в UI.
+        checked_at:
+          type: string
+          format: date
+          examples: ["2026-11-02"]
+        is_verified:
+          type: boolean
+          description: >
+            Признак проверенного тарифа. Если false (например, Airalo Таиланд
+            безлимит 199 PLN из примечания), в интерфейсе выводится пометка
+            «Непроверено» / «Unverified».
+          examples: [true]
+        note:
+          type:
+            - string
+            - "null"
+          description:
+            Примечание к тарифу (старая цена, акция, региональное ограничение,
+            статус проверки).
+
+    CountryDetailResponse:
+      type: object
+      required:
+        - id
+        - slug
+        - iso_code
+        - lang
+        - name
+        - seo
+        - last_checked_at
+        - price_summaries
+        - tariffs
+      properties:
+        id:
+          type: integer
+        slug:
+          type: string
+        iso_code:
+          type: string
+        lang:
+          $ref: "#/components/schemas/LanguageCode"
+        name:
+          type: string
+        restriction_notice:
+          type:
+            - string
+            - "null"
+        seo:
+          $ref: "#/components/schemas/SeoMetadata"
+        last_checked_at:
+          type:
+            - string
+            - "null"
+          format: date
+        price_summaries:
+          type: array
+          items:
+            $ref: "#/components/schemas/CurrencyPriceSummary"
+        tariffs:
+          type: array
+          items:
+            $ref: "#/components/schemas/TariffItem"
+
+    CountryTariffsResponse:
+      type: object
+      required:
+        - country_slug
+        - lang
+        - items
+      properties:
+        country_slug:
+          type: string
+        lang:
+          $ref: "#/components/schemas/LanguageCode"
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/TariffItem"
+
+    ProviderItem:
+      type: object
+      required:
+        - id
+        - slug
+        - name
+        - website_url
+        - has_unlimited_plans
+        - summary
+      properties:
+        id:
+          type: integer
+        slug:
+          type: string
+          examples: [saily]
+        name:
+          type: string
+          examples: [Saily]
+        website_url:
+          type: string
+          format: uri
+        affiliate_program_url:
+          type:
+            - string
+            - "null"
+          format: uri
+        commission_percent:
+          type:
+            - number
+            - "null"
+          description:
+            Опубликованный процент партнёрской комиссии (Yesim 10%, Saily 15%).
+          examples: [15.0]
+        has_unlimited_plans:
+          type: boolean
+        summary:
+          type: string
+        affiliate_notes:
+          type:
+            - string
+            - "null"
+        speed_limit_policy:
+          type:
+            - string
+            - "null"
+        refund_policy:
+          type:
+            - string
+            - "null"
+        activation_policy:
+          type:
+            - string
+            - "null"
+
+    CalculatorScenarioNorm:
+      type: object
+      required:
+        - slug
+        - title
+        - description
+        - mb_per_hour
+        - variance_percent
+        - source_url
+        - checked_at
+      properties:
+        slug:
+          type: string
+          enum:
+            - social_media
+            - video_streaming
+            - navigation_maps
+            - work_tools
+        title:
+          type: string
+        description:
+          type: string
+        mb_per_hour:
+          type: integer
+          examples: [450]
+        variance_percent:
+          type: integer
+          examples: [30]
+        source_url:
+          type: string
+          format: uri
+        checked_at:
+          type: string
+          format: date
+
+    ProviderListResponse:
+      type: object
+      required:
+        - lang
+        - providers
+        - calculator_scenarios
+      properties:
+        lang:
+          $ref: "#/components/schemas/LanguageCode"
+        providers:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProviderItem"
+        calculator_scenarios:
+          type: array
+          items:
+            $ref: "#/components/schemas/CalculatorScenarioNorm"
+
+    ScenarioUsageInput:
+      type: object
+      required:
+        - scenario_slug
+        - hours_per_day
+      properties:
+        scenario_slug:
+          type: string
+          enum:
+            - social_media
+            - video_streaming
+            - navigation_maps
+            - work_tools
+        hours_per_day:
+          type: number
+          minimum: 0
+          maximum: 24
+          examples: [2.0]
+
+    CalculatorEstimateRequest:
+      type: object
+      required:
+        - country_slug
+        - days
+        - scenarios
+      properties:
+        country_slug:
+          type: string
+          examples: [turkey]
+        days:
+          type: integer
+          minimum: 1
+          maximum: 90
+          examples: [7]
+        scenarios:
+          type: array
+          minItems: 1
+          maxItems: 4
+          items:
+            $ref: "#/components/schemas/ScenarioUsageInput"
+
+    ScenarioUsageBreakdown:
+      type: object
+      required:
+        - scenario_slug
+        - title
+        - hours_per_day
+        - mb_per_hour
+        - daily_mb
+        - total_mb
+      properties:
+        scenario_slug:
+          type: string
+        title:
+          type: string
+        hours_per_day:
+          type: number
+        mb_per_hour:
+          type: integer
+        daily_mb:
+          type: number
+        total_mb:
+          type: number
+
+    CalculatorEstimateResponse:
+      type: object
+      required:
+        - country_slug
+        - days
+        - daily_mb
+        - total_mb
+        - estimated_gb
+        - estimated_gb_min
+        - estimated_gb_max
+        - variance_percent
+        - recommended_package_gb
+        - recommended_packages_count
+        - norms_source_url
+        - norms_checked_at
+        - breakdown
+        - matching_tariffs
+      properties:
+        country_slug:
+          type: string
+        days:
+          type: integer
+        daily_mb:
+          type: number
+        total_mb:
+          type: number
+        estimated_gb:
+          type: number
+          examples: [4.2]
+        estimated_gb_min:
+          type: number
+          description: Нижняя граница оценки (-30%).
+          examples: [2.9]
+        estimated_gb_max:
+          type: number
+          description: Верхняя граница оценки (+30%).
+          examples: [5.5]
+        variance_percent:
+          type: integer
+          examples: [30]
+        recommended_package_gb:
+          type:
+            - number
+            - "null"
+          description:
+            Рекомендуемый номинал пакета из стартовой сетки (5 или 10 ГБ).
+          examples: [5, 10]
+        recommended_packages_count:
+          type: integer
+          description:
+            Количество пакетов на поездку (если расчёт превышает 10 ГБ или 30
+            дней).
+          examples: [1]
+        norms_source_url:
+          type: string
+          format: uri
+          examples: ["https://yesim.app/data-calculator/"]
+        norms_checked_at:
+          type: string
+          format: date
+          examples: ["2026-11-02"]
+        breakdown:
+          type: array
+          items:
+            $ref: "#/components/schemas/ScenarioUsageBreakdown"
+        matching_tariffs:
+          type: array
+          description:
+            Подходящие проверенные тарифы страны (только с is_verified = true).
+          items:
+            $ref: "#/components/schemas/TariffItem"
+
+    PageContentResponse:
+      type: object
+      required:
+        - slug
+        - lang
+        - seo
+      properties:
+        slug:
+          type: string
+          examples: [home]
+        lang:
+          $ref: '#/components/schemas/LanguageCode'
+        seo:
+          $ref: '#/components/schemas/SeoMetadata'
+
+    ErrorResponse:
+      type: object
+      required:
+        - detail
+      properties:
+        detail:
+          type: string
