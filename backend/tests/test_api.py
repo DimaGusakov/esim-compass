@@ -1,84 +1,164 @@
+import pytest
 from fastapi.testclient import TestClient
 
 from app import main
 from app.database import initialize
 
 
-async def count_rows(conn):
-    return (await conn.exec_driver_sql("SELECT count(*) FROM tariffs")).scalar_one()
+@pytest.fixture(scope="module")
+def client():
+    previous_url = main.PUBLIC_URL
+    main.PUBLIC_URL = "https://example.com"
+    with TestClient(main.app) as test_client:
+        yield test_client
+    main.PUBLIC_URL = previous_url
 
 
-def test_api_and_idempotent_seed(monkeypatch):
-    monkeypatch.setattr(main, "PUBLIC_URL", "https://example.com")
-    with TestClient(main.app) as client:
-        countries = client.get("/api/v1/countries").json()
-        assert len(countries["items"]) == 13
-        assert client.get("/api/v1/countries?lang=en").json()["lang"] == "en"
-        country = client.get("/api/v1/countries/turkey").json()
-        assert country["slug"] == "turkey"
-        assert client.get("/api/v1/countries/nope").status_code == 404
-        tariffs = client.get(
-            "/api/v1/countries/turkey/tariffs?data_gb=10&currency=EUR"
-        ).json()["items"]
-        assert tariffs and all(
-            t["data_gb"] == 10 and t["currency"] == "EUR" for t in tariffs
-        )
-        assert client.get("/api/v1/pages/home").status_code == 200
-        assert client.get("/api/v1/pages/missing").status_code == 404
-        assert len(client.get("/api/v1/providers").json()["providers"]) == 5
-        payload = {
-            "country_slug": "turkey",
-            "days": 10,
-            "scenarios": [
-                {"scenario_slug": "navigation_maps", "hours_per_day": 2},
-                {"scenario_slug": "social_media", "hours_per_day": 1},
-            ],
-        }
-        result = client.post("/api/v1/calculator/estimate", json=payload).json()
-        assert [
-            result[k]
-            for k in (
-                "daily_mb",
-                "total_mb",
-                "estimated_gb",
-                "estimated_gb_min",
-                "estimated_gb_max",
-                "recommended_package_gb",
-            )
-        ] == [610, 6100, 6.1, 4.3, 7.9, 10]
-        payload.update(country_slug="thailand", days=60)
-        matching = client.post("/api/v1/calculator/estimate", json=payload).json()[
-            "matching_tariffs"
-        ]
-        assert matching and all(t["is_verified"] for t in matching)
-        assert any(
-            not t["is_verified"]
-            for t in client.get("/api/v1/countries/thailand/tariffs").json()["items"]
-        )
-        assert client.post("/api/v1/calculator/estimate", json={}).json().get("detail")
-        response = client.get(
-            f"/api/v1/redirects/{tariffs[0]['id']}", follow_redirects=False
-        )
-        assert (
-            response.status_code == 302
-            and response.headers["location"] == tariffs[0]["source_url"]
-        )
-        assert client.get("/api/v1/redirects/999999").status_code == 404
-        assert "https://example.com/sitemap.xml" in client.get("/robots.txt").text
-        sitemap = client.get("/sitemap.xml").text
-        assert (
-            "localhost" not in sitemap
-            and "https://example.com/ru/country/turkey" in sitemap
-            and 'hreflang="en"' in sitemap
-        )
-        portal = client.portal
+@pytest.fixture
+def calculation():
+    return {
+        "country_slug": "turkey",
+        "days": 10,
+        "scenarios": [
+            {"scenario_slug": "navigation_maps", "hours_per_day": 2},
+            {"scenario_slug": "social_media", "hours_per_day": 1},
+        ],
+    }
 
-        async def seed_twice():
+
+def test_countries(client):
+    response = client.get("/api/v1/countries?lang=en")
+    assert response.status_code == 200
+    assert response.json()["lang"] == "en"
+    assert len(response.json()["items"]) == 13
+
+
+def test_country_detail(client):
+    response = client.get("/api/v1/countries/turkey")
+    assert response.status_code == 200
+    assert response.json()["slug"] == "turkey"
+    assert client.get("/api/v1/countries/nope").status_code == 404
+
+
+def test_tariffs_filters(client):
+    response = client.get(
+        "/api/v1/countries/turkey/tariffs?data_gb=10&currency=EUR&only_verified=true&is_unlimited=false"
+    )
+    assert response.status_code == 200
+    items = response.json()["items"]
+    assert items and all(
+        t["data_gb"] == 10
+        and t["currency"] == "EUR"
+        and t["is_verified"]
+        and not t["is_unlimited"]
+        for t in items
+    )
+    assert client.get("/api/v1/countries/nope/tariffs").status_code == 404
+
+
+def test_pages(client):
+    assert client.get("/api/v1/pages/home").status_code == 200
+    assert client.get("/api/v1/pages/missing").status_code == 404
+
+
+def test_providers(client):
+    response = client.get("/api/v1/providers")
+    assert response.status_code == 200
+    assert len(response.json()["providers"]) == 5
+    assert len(response.json()["calculator_scenarios"]) == 4
+
+
+def test_redirects(client):
+    tariff = client.get("/api/v1/countries/turkey/tariffs").json()["items"][0]
+    response = client.get(f"/api/v1/redirects/{tariff['id']}", follow_redirects=False)
+    assert response.status_code == 302
+    assert response.headers["location"] == tariff["source_url"]
+    missing = client.get("/api/v1/redirects/999999", follow_redirects=False)
+    assert missing.status_code == 404
+    assert isinstance(missing.json()["detail"], str)
+
+
+def test_calculator_example(client, calculation):
+    response = client.post("/api/v1/calculator/estimate", json=calculation)
+    assert response.status_code == 200
+    result = response.json()
+    assert [
+        result[k]
+        for k in (
+            "daily_mb",
+            "total_mb",
+            "estimated_gb",
+            "estimated_gb_min",
+            "estimated_gb_max",
+            "recommended_package_gb",
+        )
+    ] == [610, 6100, 6.1, 4.3, 7.9, 10]
+
+
+def test_calculator_excludes_unverified(client, calculation):
+    calculation.update(country_slug="thailand", days=60)
+    all_tariffs = client.get("/api/v1/countries/thailand/tariffs").json()["items"]
+    assert any(not t["is_verified"] and t["is_unlimited"] for t in all_tariffs)
+    response = client.post("/api/v1/calculator/estimate", json=calculation)
+    assert response.status_code == 200
+    matching = response.json()["matching_tariffs"]
+    assert matching and all(t["is_verified"] for t in matching)
+
+
+def test_calculator_rejects_zero_days(client, calculation):
+    calculation["days"] = 0
+    response = client.post("/api/v1/calculator/estimate", json=calculation)
+    assert response.status_code == 422
+    assert isinstance(response.json()["detail"], str)
+
+
+def test_seed_idempotent(client):
+    async def seed_twice():
+        async def counts():
             async with main.engine.connect() as conn:
-                before = await count_rows(conn)
-            await initialize()
-            await initialize()
-            async with main.engine.connect() as conn:
-                return before, await count_rows(conn)
+                tables = (
+                    "countries",
+                    "country_translations",
+                    "providers",
+                    "provider_translations",
+                    "affiliate_links",
+                    "tariffs",
+                    "tariff_translations",
+                    "calculator_scenarios",
+                    "calculator_scenario_translations",
+                    "page_translations",
+                )
+                result = []
+                for table in tables:
+                    result.append(
+                        (
+                            await conn.exec_driver_sql(
+                                f'SELECT count(*) FROM "{table}"'
+                            )
+                        ).scalar_one()
+                    )
+                return tuple(result)
 
-        assert portal.call(seed_twice) == (90, 90)
+        before = await counts()
+        await initialize()
+        await initialize()
+        return before, await counts()
+
+    before, after = client.portal.call(seed_twice)
+    assert before == after
+    assert before[0] == 13 and before[5] == 90
+
+
+def test_robots(client):
+    response = client.get("/robots.txt")
+    assert response.status_code == 200
+    assert "Sitemap: https://example.com/sitemap.xml" in response.text
+    assert "localhost" not in response.text
+
+
+def test_sitemap(client):
+    response = client.get("/sitemap.xml")
+    assert response.status_code == 200
+    assert "localhost" not in response.text
+    assert "https://example.com/ru/country/turkey" in response.text
+    assert 'hreflang="en"' in response.text
