@@ -1,0 +1,44 @@
+name: Gitflow CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop, 'feature/**', 'release/**', 'hotfix/**' ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  quality-gate:
+    name: Quality Gate (Backend + Frontend)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Run Backend Lint & Tests
+        working-directory: ./backend
+        run: |
+          if [ -f requirements.txt ]; then
+            pip install -r requirements-dev.txt
+            ruff check .
+            pytest
+          fi
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Run Frontend Build Check
+        working-directory: ./frontend
+        run: |
+          if [ -f package.json ]; then
+            npm ci
+            npm run build
+          fi
+
+      - name: Docker compose config check
+        run: docker compose config -q

@@ -1,0 +1,20 @@
+openapi: 3.1.0
+info:
+  title: API
+  # semver контракта: растёт при любой правке. Версия в пути (v1) меняется только при ломающих изменениях
+  version: 1.0.0
+servers:
+  - url: /api/v1
+paths:
+  /health:
+    get:
+      summary: Проверка живости
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: ok }

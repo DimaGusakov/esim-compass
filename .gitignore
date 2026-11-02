@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.angular/
+__pycache__/
+.venv/
+*.pyc
+.env
+.DS_Store
+docs/process/.tlog-active
+.claude/skills/impeccable/scripts/bin/
