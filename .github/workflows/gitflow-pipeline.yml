@@ -10,6 +10,20 @@ jobs:
   quality-gate:
     name: Quality Gate (Backend + Frontend)
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: app_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d app_db"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
 
@@ -19,6 +33,8 @@ jobs:
           python-version: '3.12'
 
       - name: Run Backend Lint & Tests
+        env:
+          DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/app_db
         working-directory: ./backend
         run: |
           if [ -f requirements.txt ]; then
