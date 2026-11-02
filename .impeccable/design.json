@@ -1,0 +1,245 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-02T22:11:47+00:00",
+  "title": "Design System: esim-compass",
+  "extensions": {
+    "colorMeta": {
+      "thermal-ground": {
+        "role": "neutral",
+        "displayName": "Thermal Ground",
+        "canonical": "#E4E0D7",
+        "tonalRamp": [
+          "#504E4B",
+          "#7D7B76",
+          "#ABA8A1",
+          "#E4E0D7",
+          "#EBE8E1",
+          "#F2F0EB",
+          "#F8F7F5",
+          "#FCFCFB"
+        ]
+      },
+      "tag-stock": {
+        "role": "neutral",
+        "displayName": "Tag Stock",
+        "canonical": "#F2EFE8",
+        "tonalRamp": [
+          "#555451",
+          "#858380",
+          "#B6B3AE",
+          "#F2EFE8",
+          "#F5F3EE",
+          "#F8F7F4",
+          "#FCFBF9",
+          "#FEFDFD"
+        ]
+      },
+      "print-black": {
+        "role": "neutral",
+        "displayName": "Print Black",
+        "canonical": "#141311",
+        "tonalRamp": [
+          "#070706",
+          "#0B0A09",
+          "#0F0E0D",
+          "#141311",
+          "#4F4E4C",
+          "#8A8988",
+          "#C4C4C4",
+          "#E8E7E7"
+        ]
+      },
+      "faded-print": {
+        "role": "neutral",
+        "displayName": "Faded Print",
+        "canonical": "#57534B",
+        "tonalRamp": [
+          "#1E1D1A",
+          "#302E29",
+          "#413E38",
+          "#57534B",
+          "#817E78",
+          "#ABA9A5",
+          "#D5D4D2",
+          "#EEEEED"
+        ]
+      },
+      "priority-orange": {
+        "role": "primary",
+        "displayName": "Priority Orange",
+        "canonical": "#F2491E",
+        "tonalRamp": [
+          "#551A0A",
+          "#852810",
+          "#B63716",
+          "#F2491E",
+          "#F57656",
+          "#F8A48E",
+          "#FCD2C7",
+          "#FEEDE8"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "H1 в одну строку."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Заголовки разделов."
+      },
+      "code": {
+        "displayName": "Code",
+        "purpose": "Код страны, главный элемент каталога."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Названия провайдеров."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Основной текст, tnum."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Заголовки столбцов таблицы."
+      }
+    },
+    "shadows": [
+      {
+        "name": "focus-ring",
+        "value": "0 0 0 5px #F2EFE8",
+        "purpose": "Внешнее кольцо фокуса вокруг чёрной обводки 3px."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out-expo",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Единственная анимация: смена числа результата калькулятора, 0,2 с."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "table-stack",
+        "value": "760px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Переход со страницы-результата на страницу страны.",
+      "html": "<a class=\"ds-btn-primary\" href=\"#\">Все тарифы: Турция</a>",
+      "css": ".ds-btn-primary{display:inline-flex;align-items:center;min-height:48px;padding:0 16px;background:#141311;color:#F2EFE8;font:600 1rem/1 'Fira Sans',system-ui,sans-serif;text-decoration:none}.ds-btn-primary:hover{background:#F2EFE8;color:#141311;outline:2px solid #141311}.ds-btn-primary:focus-visible{outline:3px solid #141311;outline-offset:2px}"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Ссылка «Открыть» в строке тарифа.",
+      "html": "<a class=\"ds-btn-secondary\" href=\"#\">Открыть</a>",
+      "css": ".ds-btn-secondary{display:inline-flex;align-items:center;min-height:44px;padding:0 14px;border:2px solid #141311;background:#E4E0D7;color:#141311;font:600 1rem/1 'Fira Sans',system-ui,sans-serif;text-decoration:none}.ds-btn-secondary:hover{background:#141311;color:#F2EFE8}.ds-btn-secondary:focus-visible{outline:3px solid #141311;outline-offset:2px}"
+    },
+    {
+      "name": "Input Field",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "Числовое поле калькулятора со степпером.",
+      "html": "<div class=\"ds-stepper\"><button type=\"button\">−</button><input value=\"7\" aria-label=\"Дней\"><button type=\"button\">+</button></div>",
+      "css": ".ds-stepper{display:grid;grid-template-columns:48px 96px 48px}.ds-stepper button,.ds-stepper input{height:48px;border:2px solid #141311;background:#E4E0D7;color:#141311;font:600 1rem 'Fira Sans',system-ui,sans-serif;border-radius:0}.ds-stepper input{text-align:center;border-inline:0}.ds-stepper button{background:#F2EFE8;font-size:1.25rem}.ds-stepper button:hover{background:#141311;color:#F2EFE8}.ds-stepper :focus-visible{outline:3px solid #141311;outline-offset:2px}"
+    },
+    {
+      "name": "Segmented Filter",
+      "kind": "chip",
+      "refersTo": null,
+      "description": "Фильтр таблицы: выбранный сегмент инвертирован и помечен галочкой.",
+      "html": "<div class=\"ds-seg\"><span class=\"ds-seg-on\">Все</span><span>5 ГБ</span><span>10 ГБ</span></div>",
+      "css": ".ds-seg{display:flex}.ds-seg span{display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border:2px solid #141311;margin-right:-2px;background:#F2EFE8;color:#141311;font:600 .9375rem 'Fira Sans',system-ui,sans-serif}.ds-seg .ds-seg-on{background:#141311;color:#F2EFE8}.ds-seg .ds-seg-on::before{content:'';width:.35em;height:.65em;border:solid currentColor;border-width:0 2px 2px 0;transform:rotate(40deg);margin-right:.7em}"
+    },
+    {
+      "name": "Unverified Tag",
+      "kind": "chip",
+      "refersTo": "tag-unverified",
+      "description": "Метка записи с оговоркой.",
+      "html": "<span class=\"ds-tag\">Непроверено</span>",
+      "css": ".ds-tag{display:inline-block;padding:1px 8px;border:2px solid #141311;background:#F2491E;color:#141311;font:600 .75rem/1.5 'Fira Sans',system-ui,sans-serif;text-transform:uppercase;letter-spacing:.04em}"
+    },
+    {
+      "name": "Country Code Row",
+      "kind": "custom",
+      "refersTo": null,
+      "description": "Сигнатурная строка каталога: код страны плотным гротеском.",
+      "html": "<div class=\"ds-country\"><span class=\"ds-code\">TR</span><span class=\"ds-name\">Турция</span></div>",
+      "css": ".ds-country{display:flex;align-items:baseline;gap:14px;padding:10px 14px;background:#F2EFE8;border-top:2px solid #141311;border-bottom:2px solid #141311}.ds-code{font:800 3.5rem/.9 'Fira Sans Extra Condensed','Arial Narrow',sans-serif;letter-spacing:.01em;color:#141311}.ds-name{font:600 1.0625rem 'Fira Sans',system-ui,sans-serif;color:#141311}"
+    },
+    {
+      "name": "Result Panel",
+      "kind": "custom",
+      "refersTo": "result-panel",
+      "description": "Единственная оранжевая заливка страницы: ответ калькулятора.",
+      "html": "<div class=\"ds-result\"><div class=\"ds-lbl\">Нужно примерно</div><div class=\"ds-gb\">8,6<small>ГБ</small></div><div class=\"ds-rng\">Диапазон ±30%: 6,0 – 11,2 ГБ</div></div>",
+      "css": ".ds-result{background:#F2491E;border:2px solid #141311;color:#141311;padding:28px 24px;display:grid;gap:14px;font-family:'Fira Sans',system-ui,sans-serif}.ds-lbl,.ds-rng{font-weight:600}.ds-gb{font:800 6rem/.85 'Fira Sans Extra Condensed','Arial Narrow',sans-serif}.ds-gb small{font-size:.4em;margin-left:.15em}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Baggage Tag",
+    "overview": "Справочник выглядит как то, что печатают на багажной бирке: тёплая термобумага, чёрная печать и один сигнальный оранжевый для приоритетной наклейки. Из этого мира взяты только четыре вещи: шрифт, палитра, плотность и один приём, крупный код страны (`TR`, `JP`, `US`), который читается как три буквы аэропорта на бирке. Структура страниц, навигация и контролы обычные: таблицы, поля, select, переключатели.\n\nСтраницы плотные и деловые, как рабочий инструмент в поездке. Здесь нет декоративных рамок, штрихкодов, перфорации и скруглений: углы везде прямые, глубину задают линии и заливка, а не тени. Оранжевый цвет работает как печать приоритета: на странице его мало, и он всегда означает «вот ответ» или «обрати внимание».",
+    "keyCharacteristics": [
+      "Тёплый серый фон, чёрная печать, один оранжевый, только заливкой.",
+      "Плотный жирный гротеск для кодов стран, заголовков и чисел.",
+      "Рабочая гарнитура с табличными цифрами для текста и таблиц.",
+      "Таблицы и ряды вместо одинаковых карточек.",
+      "Углы прямые, тени нет, толстые чёрные линии 2px на границах."
+    ],
+    "rules": [
+      {
+        "name": "The Fill-Only Orange Rule",
+        "body": "Оранжевый не бывает цветом текста, ссылки или тонкой линии. Он заливает область, а чёрный текст сверху обязателен.",
+        "section": "Colors"
+      },
+      {
+        "name": "The Rare Priority Rule",
+        "body": "На экране не больше одной крупной оранжевой заливки плюс метки состояния. Если оранжевого стало много, он перестаёт значить приоритет.",
+        "section": "Colors"
+      },
+      {
+        "name": "The Not-Only-Color Rule",
+        "body": "Состояние не передаётся только цветом: «Непроверено» подписано текстом, выбранный фильтр инвертирован и помечен галочкой.",
+        "section": "Colors"
+      },
+      {
+        "name": "The Code Is The Voice Rule",
+        "body": "Код страны ставится жирным плотным гротеском крупно, как главный элемент строки каталога. Другого декоративного шрифтового приёма нет.",
+        "section": "Typography"
+      },
+      {
+        "name": "The Tabular Numbers Rule",
+        "body": "Любое число в таблице и калькуляторе набирается с `tnum`.",
+        "section": "Typography"
+      },
+      {
+        "name": "The Flat-By-Default Rule",
+        "body": "Ни одна поверхность не отбрасывает тень. Выделение делается заливкой, инверсией или линией.",
+        "section": "Elevation"
+      }
+    ],
+    "dos": [
+      "Do ставить код страны крупным плотным гротеском как главный элемент строки каталога и шапки страны.",
+      "Do заливать оранжевым только области, а текст на нём делать `#141311`.",
+      "Do показывать две валюты (EUR и PLN) рядом, без пересчёта, с датой и ссылкой на источник у каждой цены.",
+      "Do набирать цифры в таблицах с `tnum` и выравнивать цены по правому краю в каталоге.",
+      "Do держать цели нажатия не меньше 44px и видимый фокус 3px на каждом интерактивном элементе."
+    ],
+    "donts": [
+      "Don't использовать эмодзи (включая флаги), градиенты, тени и скругления.",
+      "Don't делать сетку одинаковых карточек, значки в кружках и декоративные рамки.",
+      "Don't красить текст или тонкие линии оранжевым.",
+      "Don't передавать состояние одним цветом.",
+      "Don't переносить мотивы бирки (штрихкод, перфорация, рамка бирки) в интерфейс: мир даёт шрифт, палитру, плотность и код страны, а не оформление."
+    ]
+  }
+}
