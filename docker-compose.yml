@@ -32,6 +32,7 @@ services:
       # SSR на сервере ходит в API по имени сервиса, а не по localhost
       API_INTERNAL_URL: ${API_INTERNAL_URL:-http://backend:8000}
       PUBLIC_URL: ${PUBLIC_URL:-http://localhost}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-}
     depends_on:
       - backend
 
