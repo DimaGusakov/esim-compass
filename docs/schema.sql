@@ -68,7 +68,7 @@ CREATE TABLE affiliate_links (
 
 -- 6. Тарифы eSIM
 -- Валюта хранится отдельным полем (EUR или PLN), пересчёт по курсу не выполняется.
--- Поле is_verified разграничивает проверенные тарифы (TRUE) и записи с пометкой «непроверено» (FALSE).
+-- is_verified = FALSE: данные неполные или взяты из примечания; TRUE не означает подтверждения человеком, это цена, снятая со страницы провайдера в checked_at.
 CREATE TABLE tariffs (
     id SERIAL PRIMARY KEY,
     country_id INTEGER NOT NULL REFERENCES countries(id) ON DELETE CASCADE,
