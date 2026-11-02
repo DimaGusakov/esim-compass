@@ -1,0 +1,83 @@
+/* Токены и правила из DESIGN.md (мир «Багажная бирка»). */
+
+@import "tailwindcss";
+
+@font-face { font-family: "Fira Sans Extra Condensed"; font-weight: 800; font-display: swap;
+  src: url("/fonts/fira-sans-extra-condensed-cyrillic-800-normal.woff2") format("woff2");
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
+@font-face { font-family: "Fira Sans Extra Condensed"; font-weight: 800; font-display: swap;
+  src: url("/fonts/fira-sans-extra-condensed-latin-800-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Fira Sans"; font-weight: 400; font-display: swap;
+  src: url("/fonts/fira-sans-cyrillic-400-normal.woff2") format("woff2");
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
+@font-face { font-family: "Fira Sans"; font-weight: 400; font-display: swap;
+  src: url("/fonts/fira-sans-latin-400-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Fira Sans"; font-weight: 600; font-display: swap;
+  src: url("/fonts/fira-sans-cyrillic-600-normal.woff2") format("woff2");
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
+@font-face { font-family: "Fira Sans"; font-weight: 600; font-display: swap;
+  src: url("/fonts/fira-sans-latin-600-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+
+@theme {
+  /* Контраст: print-black на thermal-ground 14,10; faded-print 5,81; print-black на priority-orange 5,08.
+     priority-orange как цвет текста не используется (2,77), только заливка. */
+  --color-thermal-ground: #E4E0D7;
+  --color-tag-stock: #F2EFE8;
+  --color-print-black: #141311;
+  --color-faded-print: #57534B;
+  --color-priority-orange: #F2491E;
+  --color-hairline: rgb(20 19 17 / 0.22);
+
+  --font-display: "Fira Sans Extra Condensed", "Arial Narrow", sans-serif;
+  --font-sans: "Fira Sans", system-ui, sans-serif;
+
+  /* Мир без скруглений и теней: этих утилит нет вообще. */
+  --radius-*: initial;
+  --shadow-*: initial;
+  --inset-shadow-*: initial;
+  --drop-shadow-*: initial;
+
+  --breakpoint-md: 760px;
+  --container-page: 1240px;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    scrollbar-color: var(--color-print-black) var(--color-thermal-ground);
+    scrollbar-width: thin;
+  }
+  body {
+    margin: 0;
+    background: var(--color-thermal-ground);
+    color: var(--color-print-black);
+    font: 400 1rem/1.5 var(--font-sans);
+    font-variant-numeric: tabular-nums;
+  }
+  ::selection { background: var(--color-priority-orange); color: var(--color-print-black); }
+  input, select, button, textarea { caret-color: var(--color-print-black); }
+  a { text-underline-offset: 0.2em; text-decoration-thickness: 1px; }
+  a:hover { text-decoration-thickness: 2px; }
+  :focus-visible {
+    outline: 3px solid var(--color-print-black);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 5px var(--color-tag-stock);
+  }
+  [hidden] { display: none !important; }
+}
+
+@layer components {
+  .wrap { width: min(100%, var(--container-page)); margin-inline: auto; padding-inline: 16px; }
+  @media (min-width: 760px) { .wrap { padding-inline: 32px; } }
+
+  /* Типографика из DESIGN.md */
+  .t-display { font: 800 clamp(1.5rem, 6.9vw, 5rem)/0.95 var(--font-display); text-transform: uppercase; white-space: nowrap; }
+  .t-headline { font: 800 clamp(1.75rem, 5vw, 2.75rem)/1 var(--font-display); text-transform: uppercase; text-wrap: balance; }
+  .t-code { font: 800 3.25rem/0.9 var(--font-display); letter-spacing: 0.01em; }
+  @media (min-width: 760px) { .t-code { font-size: 3.5rem; } }
+  .t-title { font: 600 1.125rem/1.3 var(--font-sans); }
+  .t-label { font: 600 0.8125rem/1.4 var(--font-sans); letter-spacing: 0.04em; text-transform: uppercase; }
+}
