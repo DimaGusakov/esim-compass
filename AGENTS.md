@@ -1,9 +1,10 @@
 # Единые правила проекта (Single Source of Truth & Gitflow)
 
 ## 1. Источник правды (`/docs`)
-Вся разработка ведется СТРОГО на основании 4 файлов в папке `/docs`:
+Вся разработка ведется СТРОГО на основании 4 файлов в папке `/docs` и корневого `DESIGN.md`:
 - `docs/SPEC.md` — функциональные требования, роуты, SEO/ASO структура и критерии приемки.
-- `docs/DESIGN_SYSTEM.md` — дизайн-токены, цвета и правила верстки Tailwind CSS.
+- `docs/DESIGN_SYSTEM.md` — указатель на корневой `DESIGN.md`.
+- `DESIGN.md` (корень) — источник правды по дизайну: токены, цвета, типографика, правила верстки Tailwind CSS.
 - `docs/openapi.yaml` — единый контракт API между Frontend (Angular) и Backend (FastAPI).
 - `docs/schema.sql` — схема таблиц PostgreSQL.
 
