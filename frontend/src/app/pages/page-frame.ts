@@ -1,64 +1,45 @@
-import { DOCUMENT } from '@angular/common';
-import { ChangeDetectionStrategy, Component, effect, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { STRINGS } from '../core/i18n';
 import { Lang, LANGS } from '../core/lang';
 
-/** Шапка, область содержимого и подвал. Общий каркас всех страниц. */
+/** Шапка с переключателем языка, область содержимого и подвал. Общий каркас всех страниц. */
 @Component({
   selector: 'app-page-frame',
   imports: [RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <a
-      class="absolute left-4 -top-16 z-10 bg-print-black px-3.5 py-2.5 text-tag-stock focus:top-2"
-      href="#main"
-      >{{ lang() === 'ru' ? 'К содержимому' : 'Skip to content' }}</a
-    >
-    <header class="border-b-2 border-print-black">
-      <div class="wrap flex min-h-14 items-center justify-between">
-        <a
-          class="font-display text-2xl font-extrabold uppercase leading-none tracking-wide no-underline"
-          [routerLink]="['/', lang()]"
-          >esim-compass</a
-        >
-        <nav class="flex border-2 border-print-black" [attr.aria-label]="lang() === 'ru' ? 'Язык' : 'Language'">
+    <a class="skip" href="#main">{{ s().skip }}</a>
+    <header class="top">
+      <div class="wrap">
+        <a class="brand" [routerLink]="['/', lang()]" aria-label="esim-compass">esim-compass</a>
+        <nav class="lang" [attr.aria-label]="s().langNav">
           @for (l of langs; track l) {
             <a
-              class="grid min-h-10 min-w-11 place-items-center text-sm font-semibold uppercase no-underline"
-              [class.bg-print-black]="l === lang()"
-              [class.text-tag-stock]="l === lang()"
-              [routerLink]="['/', l]"
+              [href]="'/' + l + rest()"
               [attr.aria-current]="l === lang() ? 'page' : null"
               [attr.lang]="l"
               [attr.hreflang]="l"
-              >{{ l }}</a
+              >{{ l.toUpperCase() }}</a
             >
           }
         </nav>
       </div>
     </header>
-    <main id="main" class="wrap pt-7 md:pt-10">
+    <main id="main" class="wrap">
       <ng-content />
     </main>
-    <footer class="wrap mt-16 border-t-2 border-print-black pb-10 pt-5 text-sm text-faded-print">
-      <p class="max-w-prose">
-        {{
-          lang() === 'ru'
-            ? 'Справочник тарифов eSIM. Цены сняты со страниц провайдеров, в исходных валютах, без пересчёта.'
-            : 'eSIM plan directory. Prices are taken from provider pages in their original currencies, without conversion.'
-        }}
-      </p>
+    <footer>
+      <div class="wrap">
+        <p class="prose">{{ s().footer }}</p>
+      </div>
     </footer>
   `,
 })
 export class PageFrame {
   readonly lang = input.required<Lang>();
+  /** Путь страницы без языка: '' или '/country/turkey'. По нему строится ссылка парной версии. */
+  readonly rest = input('');
   protected readonly langs = LANGS;
-  private readonly doc = inject(DOCUMENT);
-
-  constructor() {
-    effect(() => {
-      this.doc.documentElement.lang = this.lang();
-    });
-  }
+  protected readonly s = computed(() => STRINGS[this.lang()]);
 }
