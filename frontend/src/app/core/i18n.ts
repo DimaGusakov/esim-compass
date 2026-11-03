@@ -68,7 +68,6 @@ export interface Strings {
   colPrice: string;
   colSource: string;
   colGo: string;
-  open: string;
   affiliate: string;
   providerSite: string;
   unverified: string;
@@ -155,7 +154,6 @@ export const STRINGS: Record<Lang, Strings> = {
     colPrice: 'Цена',
     colSource: 'Снято и источник',
     colGo: 'Переход',
-    open: 'Открыть',
     affiliate: 'Партнёрская ссылка',
     providerSite: 'Сайт провайдера',
     unverified: 'Непроверено',
@@ -240,7 +238,6 @@ export const STRINGS: Record<Lang, Strings> = {
     colPrice: 'Price',
     colSource: 'Taken and source',
     colGo: 'Go',
-    open: 'Open',
     affiliate: 'Affiliate link',
     providerSite: 'Provider site',
     unverified: 'Unverified',

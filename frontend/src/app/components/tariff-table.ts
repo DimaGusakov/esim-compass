@@ -59,9 +59,8 @@ import { TariffItem } from '../core/models';
                     target="_blank"
                     [attr.rel]="t.is_affiliate_link ? 'sponsored noopener noreferrer' : 'noopener noreferrer'"
                     [attr.aria-label]="label(t)"
-                    >{{ s().open }}</a
+                    >{{ linkText(t) }}</a
                   >
-                  <span class="cell-note">{{ t.is_affiliate_link ? s().affiliate : s().providerSite }}</span>
                 </div>
               </td>
             </tr>
@@ -80,10 +79,13 @@ export class TariffTable {
   protected money = (v: number) => money(v, this.lang());
   protected vol = (t: TariffItem) => volume(t, this.s());
   protected trm = (t: TariffItem) => term(t, this.s());
+  /** Подпись перехода по SPEC 3.2: партнёрская ссылка или сайт провайдера. */
+  protected linkText = (t: TariffItem) => (t.is_affiliate_link ? this.s().affiliate : this.s().providerSite);
+  // Доступное имя начинается с видимой подписи, затем идёт тариф, к которому ведёт ссылка
   protected label = (t: TariffItem) =>
-    `${this.s().open}: ${fill(this.s().offerName, {
+    `${this.linkText(t)}: ${fill(this.s().offerName, {
       provider: t.provider_name,
       volume: this.vol(t),
       term: this.trm(t),
-    })}, ${t.is_affiliate_link ? this.s().affiliate : this.s().providerSite}`;
+    })}`;
 }
