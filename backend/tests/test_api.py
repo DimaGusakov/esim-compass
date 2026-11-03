@@ -97,12 +97,26 @@ def test_calculator_example(client, calculation):
 
 def test_calculator_excludes_unverified(client, calculation):
     calculation.update(country_slug="thailand", days=60)
-    all_tariffs = client.get("/api/v1/countries/thailand/tariffs").json()["items"]
-    assert any(not t["is_verified"] and t["is_unlimited"] for t in all_tariffs)
-    response = client.post("/api/v1/calculator/estimate", json=calculation)
-    assert response.status_code == 200
-    matching = response.json()["matching_tariffs"]
-    assert matching and all(t["is_verified"] for t in matching)
+
+    async def set_unverified(value):
+        async with main.engine.begin() as conn:
+            await conn.exec_driver_sql(
+                "UPDATE tariffs SET is_verified = %s WHERE is_unlimited "
+                "AND country_id = (SELECT id FROM countries WHERE slug = 'thailand')"
+                % ("TRUE" if value else "FALSE")
+            )
+
+    client.portal.call(set_unverified, False)
+    try:
+        all_tariffs = client.get("/api/v1/countries/thailand/tariffs").json()["items"]
+        assert any(not t["is_verified"] and t["is_unlimited"] for t in all_tariffs)
+        response = client.post("/api/v1/calculator/estimate", json=calculation)
+        assert response.status_code == 200
+        matching = response.json()["matching_tariffs"]
+        assert matching and all(t["is_verified"] for t in matching)
+        assert not any(t["is_unlimited"] for t in matching)
+    finally:
+        client.portal.call(set_unverified, True)
 
 
 def test_calculator_rejects_zero_days(client, calculation):
@@ -146,7 +160,7 @@ def test_seed_idempotent(client):
 
     before, after = client.portal.call(seed_twice)
     assert before == after
-    assert before[0] == 13 and before[5] == 90
+    assert before[0] == 13 and before[5] == 106
 
 
 def test_robots(client):
