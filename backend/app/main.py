@@ -120,7 +120,9 @@ def summary(items):
     verified = [t for t in items if t["is_verified"]]
     prices = []
     for currency in ("EUR", "PLN"):
-        group = [t for t in verified if t["currency"] == currency]
+        group = [
+            t for t in verified if t["currency"] == currency and not t["is_unlimited"]
+        ]
         if group:
             prices.append(
                 {
