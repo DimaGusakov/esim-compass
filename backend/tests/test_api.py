@@ -40,6 +40,60 @@ def test_country_detail(client):
     assert client.get("/api/v1/countries/nope").status_code == 404
 
 
+def test_turkey_price_summaries_exclude_unlimited(client):
+    response = client.get("/api/v1/countries")
+    assert response.status_code == 200
+    turkey = next(t for t in response.json()["items"] if t["slug"] == "turkey")
+    response = client.get("/api/v1/countries/turkey")
+    assert response.status_code == 200
+    detail = response.json()
+
+    for country in (turkey, detail):
+        pln = next(p for p in country["price_summaries"] if p["currency"] == "PLN")
+        assert pln == {
+            "currency": "PLN",
+            "min_price": 41.00,
+            "max_price": 63.00,
+            "verified_tariff_count": 2,
+        }
+
+    assert turkey["verified_tariffs_count"] == 9
+    assert len(detail["tariffs"]) == 9
+    assert any(
+        t["is_unlimited"] and t["price"] == 17.00 and t["currency"] == "PLN"
+        for t in detail["tariffs"]
+    )
+
+
+@pytest.mark.parametrize("unverified_price", [1.00, 100.00])
+def test_price_summaries_exclude_unverified_fixed_tariffs(unverified_price):
+    items = [
+        {
+            "is_verified": verified,
+            "is_unlimited": False,
+            "currency": "PLN",
+            "price": price,
+            "checked_at": "2026-11-03",
+        }
+        for verified, price in (
+            (True, 41.00),
+            (True, 63.00),
+            (False, unverified_price),
+        )
+    ]
+    result = main.summary(items)
+    assert result["price_summaries"] == [
+        {
+            "currency": "PLN",
+            "min_price": 41.00,
+            "max_price": 63.00,
+            "verified_tariff_count": 2,
+        }
+    ]
+    assert result["verified_tariffs_count"] == 2
+    assert result["unverified_tariffs_count"] == 1
+
+
 def test_tariffs_filters(client):
     response = client.get(
         "/api/v1/countries/turkey/tariffs?data_gb=10&currency=EUR&only_verified=true&is_unlimited=false"
